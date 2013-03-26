@@ -15,6 +15,7 @@ import com.jeffplaisance.util.fingertree.Split;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 class FingerTreeByteString extends ByteString {
 
@@ -35,7 +36,7 @@ class FingerTreeByteString extends ByteString {
         }
     };
 
-    static FingerTreeByteString empty() {
+    static FingerTreeByteString emptyFT() {
         return new FingerTreeByteString(new Empty<Integer, ByteStringLiteral>(BYTE_STRING_LENGTH_MEASURE));
     }
 
@@ -112,6 +113,13 @@ class FingerTreeByteString extends ByteString {
     }
 
     @Override
+    public void writeTo(OutputStream out) throws IOException {
+        for (ByteStringLiteral literal : bytes) {
+            literal.writeTo(out);
+        }
+    }
+
+    @Override
     public byte getByte(final int index) {
         final Split<Integer, ByteStringLiteral> split = bytes.split(new Predicate<Integer>() {
             @Override
@@ -133,12 +141,12 @@ class FingerTreeByteString extends ByteString {
     }
 
     public static void main(String[] args) throws IOException {
-        ByteString byteString = FingerTreeByteString.empty();
+        ByteString byteString = ByteString.empty();
         for (char i = 'a'; i <= 'z'; i++) {
             for (char j = 'a'; j <= 'z'; j++) {
                 for (char k = 'a'; k <= 'z'; k++) {
                     final byte[] bytes = new String(new char[]{i, j, k, '\n'}).getBytes(Charsets.UTF_8);
-                    byteString = byteString.concat(new ByteStringLiteral(bytes, 0, bytes.length));
+                    byteString = byteString.concat(ByteString.fromBytes(bytes));
                 }
             }
         }
@@ -151,6 +159,6 @@ class FingerTreeByteString extends ByteString {
         System.out.println();
 
         byteString = byteString.substring(129, 253);
-        ByteStreams.copy(byteString.getInputStream(), System.out);
+        byteString.writeTo(System.out);
     }
 }

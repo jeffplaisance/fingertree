@@ -1,7 +1,9 @@
 package com.jeffplaisance.util.fingertree.bytestring;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 class ByteStringLiteral extends ByteString {
 
@@ -24,7 +26,7 @@ class ByteStringLiteral extends ByteString {
             if (length + byteString.length <= COPY_THRESHOLD) {
                 return copy(this, byteString);
             } else {
-                return FingerTreeByteString.empty().append(this).concat(other);
+                return FingerTreeByteString.emptyFT().append(this).concat(other);
             }
         } else {
             return ((FingerTreeByteString)other).prepend(this);
@@ -46,6 +48,11 @@ class ByteStringLiteral extends ByteString {
     @Override
     public InputStream getInputStream() {
         return new ByteArrayInputStream(bytes, offset, length);
+    }
+
+    @Override
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(bytes, offset, length);
     }
 
     public byte getByte(int index) {

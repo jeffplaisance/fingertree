@@ -1,6 +1,8 @@
 package com.jeffplaisance.util.fingertree.bytestring;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 public abstract class ByteString {
@@ -13,6 +15,10 @@ public abstract class ByteString {
         return new ByteStringLiteral(Arrays.copyOfRange(bytes, offset, offset+length), 0, length);
     }
 
+    public static ByteString empty() {
+        return FingerTreeByteString.emptyFT();
+    }
+
     ByteString() {}
 
     public abstract ByteString concat(ByteString other);
@@ -20,6 +26,8 @@ public abstract class ByteString {
     public abstract ByteString substring(int start, int end);
 
     public abstract InputStream getInputStream();
+
+    public abstract void writeTo(OutputStream out) throws IOException;
 
     public abstract byte getByte(int index);
 

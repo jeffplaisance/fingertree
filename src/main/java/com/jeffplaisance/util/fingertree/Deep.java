@@ -307,16 +307,16 @@ public class Deep<V,T> implements FingerTree<V,T> {
     public Split<V, T> split(Predicate<V> predicate, V initial) {
         final V vpr = measured.sum(initial, prefix.measure());
         if (predicate.apply(vpr)) {
-            final SplitDigit<V, T> splitDigit = splitDigit(measured, predicate, initial, prefix);
+            final SplitDigit<T> splitDigit = splitDigit(measured, predicate, initial, prefix);
             return new Split<V, T>(FingerTrees.toTree(splitDigit.head, measured), splitDigit.t, deepL(splitDigit.tail, middle, suffix, measured));
         }
         final V vm = measured.sum(vpr, middle.measure());
         if (predicate.apply(vm)) {
             final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
-            final SplitDigit<V, T> splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
+            final SplitDigit<T> splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
             return new Split<V, T>(deepR(prefix, split.getHead(), splitDigit.head, measured), splitDigit.t, deepL(splitDigit.tail, split.getTail(), suffix, measured));
         } else {
-            final SplitDigit<V, T> splitDigit = splitDigit(measured, predicate, vm, suffix);
+            final SplitDigit<T> splitDigit = splitDigit(measured, predicate, vm, suffix);
             return new Split<V, T>(deepR(prefix, middle, splitDigit.head, measured), splitDigit.t, FingerTrees.toTree(splitDigit.tail, measured));
         }
     }
@@ -391,7 +391,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
         }
     }
 
-    private static <V,T> SplitDigit<V,T> splitDigit(Measured<V,T> measured, Predicate<V> predicate, V initial, Iterable<T> digit) {
+    private static <V,T> SplitDigit<T> splitDigit(Measured<V,T> measured, Predicate<V> predicate, V initial, Iterable<T> digit) {
         final List<T> head = Lists.newArrayList();
         final List<T> tail = Lists.newArrayList();
         final Iterator<T> iterator = digit.iterator();
@@ -399,21 +399,21 @@ public class Deep<V,T> implements FingerTree<V,T> {
         while (iterator.hasNext()) {
             final T a = iterator.next();
             if (!iterator.hasNext()) {
-                return new SplitDigit<V, T>(head, a, tail);
+                return new SplitDigit<T>(head, a, tail);
             }
             i = measured.sum(i, measured.measure(a));
             if (predicate.apply(i)) {
                 while (iterator.hasNext()) {
                     tail.add(iterator.next());
                 }
-                return new SplitDigit<V, T>(head, a, tail);
+                return new SplitDigit<T>(head, a, tail);
             }
             head.add(a);
         }
         throw new IllegalStateException("unreachable");
     }
 
-    private static final class SplitDigit<V,T> {
+    private static final class SplitDigit<T> {
         private final List<T> head;
         private final T t;
         private final List<T> tail;

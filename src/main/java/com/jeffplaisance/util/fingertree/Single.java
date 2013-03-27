@@ -28,18 +28,18 @@ public class Single<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> prepend(T t) {
+    public FingerTree<V, T> addFirst(T t) {
         return new Deep<V, T>(new One<V, T>(t, measured), new Empty<V, Node<V, T>>(measured.nodeMeasured()), new One<V, T>(a, measured), measured);
     }
 
     @Override
-    public FingerTree<V, T> append(T t) {
+    public FingerTree<V, T> addLast(T t) {
         return new Deep<V, T>(new One<V, T>(a, measured), new Empty<V, Node<V, T>>(measured.nodeMeasured()), new One<V, T>(t, measured), measured);
     }
 
     @Override
     public FingerTree<V, T> concat(FingerTree<V, T> other) {
-        return other.prepend(a);
+        return other.addFirst(a);
     }
 
     @Override

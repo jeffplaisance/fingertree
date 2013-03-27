@@ -24,7 +24,7 @@ public class Test {
         });
         for (char i = 'a'; i <= 'z'; i++) {
             for (char j = 'a'; j <= 'z'; j++) {
-                tree = tree.append(i+""+j);
+                tree = tree.addLast(i + "" + j);
             }
         }
         tree = tree.split(new Predicate<Integer>() {

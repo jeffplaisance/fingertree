@@ -6,7 +6,7 @@ public class FingerTrees {
     public static <V,T> FingerTree<V,T> toTree(Iterable<T> iterable, Measured<V,T> measured) {
         FingerTree<V,T> ret = new Empty<V, T>(measured);
         for (T t : iterable) {
-            ret = ret.append(t);
+            ret = ret.addLast(t);
         }
         return ret;
     }
@@ -15,7 +15,7 @@ public class FingerTrees {
         final Iterator<T> iterator = rit.reverseIterator();
         FingerTree<V, T> ret = tree;
         while (iterator.hasNext()) {
-            ret = tree.prepend(iterator.next());
+            ret = tree.addFirst(iterator.next());
         }
         return ret;
     }
@@ -23,7 +23,7 @@ public class FingerTrees {
     public static <V,T> FingerTree<V,T> append(FingerTree<V,T> tree, Iterable<T> it) {
         FingerTree<V, T> ret = tree;
         for (T t : it) {
-            ret = ret.append(t);
+            ret = ret.addLast(t);
         }
         return ret;
     }

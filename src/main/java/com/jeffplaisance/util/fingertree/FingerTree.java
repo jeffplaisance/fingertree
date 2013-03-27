@@ -10,9 +10,9 @@ public interface FingerTree<V,T> extends Iterable<T> {
 
     public V measure();
 
-    public FingerTree<V,T> prepend(T t);
+    public FingerTree<V,T> addFirst(T t);
 
-    public FingerTree<V,T> append(T t);
+    public FingerTree<V,T> addLast(T t);
 
     public FingerTree<V,T> concat(FingerTree<V,T> other);
 

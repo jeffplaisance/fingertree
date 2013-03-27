@@ -36,7 +36,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> prepend(final T t) {
+    public FingerTree<V, T> addFirst(final T t) {
         return prefix.match(new Digit.Matcher<T, FingerTree<V, T>>() {
             @Override
             public FingerTree<V, T> one(T a) {
@@ -55,13 +55,13 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
             @Override
             public FingerTree<V, T> four(T a, T b, T c, T d) {
-                return new Deep<V, T>(new Two<V, T>(t, a, measured), middle.prepend(new Node3<V, T>(b, c, d, measured)), suffix, measured);
+                return new Deep<V, T>(new Two<V, T>(t, a, measured), middle.addFirst(new Node3<V, T>(b, c, d, measured)), suffix, measured);
             }
         });
     }
 
     @Override
-    public FingerTree<V, T> append(final T t) {
+    public FingerTree<V, T> addLast(final T t) {
         return suffix.match(new Digit.Matcher<T, FingerTree<V, T>>() {
             @Override
             public FingerTree<V, T> one(T a) {
@@ -80,7 +80,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
             @Override
             public FingerTree<V, T> four(T d, T c, T b, T a) {
-                return new Deep<V, T>(prefix, middle.append(new Node3<V, T>(d, c, b, measured)), new Two<V, T>(a, t, measured), measured);
+                return new Deep<V, T>(prefix, middle.addLast(new Node3<V, T>(d, c, b, measured)), new Two<V, T>(a, t, measured), measured);
             }
         });
     }
@@ -99,7 +99,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
             @Override
             public FingerTree<V, T> single(T t) {
-                return FingerTrees.prepend(itrit, right).prepend(t);
+                return FingerTrees.prepend(itrit, right).addFirst(t);
             }
 
             @Override
@@ -112,7 +112,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
                     @Override
                     public FingerTree<V, T> single(T t) {
-                        return FingerTrees.append(left, itrit).append(t);
+                        return FingerTrees.append(left, itrit).addLast(t);
                     }
 
                     @Override

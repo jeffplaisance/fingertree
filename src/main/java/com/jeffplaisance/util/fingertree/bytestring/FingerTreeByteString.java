@@ -48,17 +48,17 @@ class FingerTreeByteString extends ByteString {
 
     public ByteString prepend(ByteStringLiteral literal) {
         if (!bytes.isEmpty() && literal.length()+bytes.first().length() <= ByteStringLiteral.COPY_THRESHOLD) {
-            return new FingerTreeByteString(bytes.removeFirst().prepend(ByteStringLiteral.copy(literal, bytes.first())));
+            return new FingerTreeByteString(bytes.removeFirst().addFirst(ByteStringLiteral.copy(literal, bytes.first())));
         } else {
-            return new FingerTreeByteString(bytes.prepend(literal));
+            return new FingerTreeByteString(bytes.addFirst(literal));
         }
     }
 
     public ByteString append(ByteStringLiteral literal) {
         if (!bytes.isEmpty() && bytes.last().length()+literal.length() <= ByteStringLiteral.COPY_THRESHOLD) {
-            return new FingerTreeByteString(bytes.removeLast().append(ByteStringLiteral.copy(bytes.last(), literal)));
+            return new FingerTreeByteString(bytes.removeLast().addLast(ByteStringLiteral.copy(bytes.last(), literal)));
         } else {
-            return new FingerTreeByteString(bytes.append(literal));
+            return new FingerTreeByteString(bytes.addLast(literal));
         }
     }
 
@@ -80,16 +80,16 @@ class FingerTreeByteString extends ByteString {
             }
         }, 0);
         final int headLength = split1.getHead().measure();
-        final Split<Integer, ByteStringLiteral> split2 = split1.getTail().prepend(split1.getElement()).split(new Predicate<Integer>() {
+        final Split<Integer, ByteStringLiteral> split2 = split1.getTail().addFirst(split1.getElement()).split(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer >= end - headLength;
             }
         }, 0);
-        final FingerTree<Integer, ByteStringLiteral> substring = split2.getHead().append(split2.getElement());
+        final FingerTree<Integer, ByteStringLiteral> substring = split2.getHead().addLast(split2.getElement());
         final int substringLen = substring.measure();
-        final FingerTree<Integer, ByteStringLiteral> substring2 = substring.removeFirst().prepend(substring.first().substring(start - headLength, substring.first().length()));
-        final FingerTree<Integer, ByteStringLiteral> substring3 = substring2.removeLast().append(substring2.last().substring(0, substring2.last().length() - (headLength + substringLen - end)));
+        final FingerTree<Integer, ByteStringLiteral> substring2 = substring.removeFirst().addFirst(substring.first().substring(start - headLength, substring.first().length()));
+        final FingerTree<Integer, ByteStringLiteral> substring3 = substring2.removeLast().addLast(substring2.last().substring(0, substring2.last().length() - (headLength + substringLen - end)));
         return new FingerTreeByteString(substring3);
     }
 

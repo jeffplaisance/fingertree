@@ -26,12 +26,12 @@ public class Empty<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> prepend(T t) {
+    public FingerTree<V, T> addFirst(T t) {
         return new Single<V, T>(t, measured);
     }
 
     @Override
-    public FingerTree<V, T> append(T t) {
+    public FingerTree<V, T> addLast(T t) {
         return new Single<V, T>(t, measured);
     }
 

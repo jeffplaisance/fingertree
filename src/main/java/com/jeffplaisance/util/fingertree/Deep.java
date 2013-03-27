@@ -33,14 +33,18 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
     @Override
     public V measure() {
-        if (measure == null) {
+        V localMeasure = measure;
+        if (localMeasure == null) {
             synchronized (this) {
                 if (measure == null) {
-                    measure = measured.sum(measured.sum(prefix.measure(), middle.measure()), suffix.measure());
+                    localMeasure = measured.sum(measured.sum(prefix.measure(), middle.measure()), suffix.measure());
+                    measure = localMeasure;
+                }  else {
+                    localMeasure = measure;
                 }
             }
         }
-        return measure;
+        return localMeasure;
     }
 
     @Override
@@ -427,12 +431,37 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
     @Override
     public Iterator<T> iterator() {
-        final Iterator<T> concat = Iterators.concat(Iterators.transform(middle.iterator(), new Function<Node<V, T>, Iterator<T>>() {
-            @Override
-            public Iterator<T> apply(Node<V, T> ts) {
-                return ts.iterator();
+        final Iterator<T> middleIteratorThunk = new Iterator<T>() {
+
+            Iterator<T> middleIterator = null;
+
+            Iterator<T> getMiddleIterator() {
+                if (middleIterator == null) {
+                    middleIterator = Iterators.concat(Iterators.transform(middle.iterator(), new Function<Node<V, T>, Iterator<T>>() {
+                        @Override
+                        public Iterator<T> apply(Node<V, T> ts) {
+                            return ts.iterator();
+                        }
+                    }));
+                }
+                return middleIterator;
             }
-        }));
-        return Iterators.concat(prefix.iterator(), concat, suffix.iterator());
+
+            @Override
+            public boolean hasNext() {
+                return getMiddleIterator().hasNext();
+            }
+
+            @Override
+            public T next() {
+                return getMiddleIterator().next();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return Iterators.concat(prefix.iterator(), middleIteratorThunk, suffix.iterator());
     }
 }

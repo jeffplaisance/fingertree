@@ -26,6 +26,10 @@ public interface FingerTree<V,T> extends Iterable<T> {
 
     public FingerTree<V,T> removeLast();
 
+    public FingerTree<V,T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive);
+
+    public FingerTree<V,T> splitRight(Predicate<V> predicate, V initial, boolean inclusive);
+
     public Split<V,T> split(Predicate<V> predicate, V initial);
 
     public Iterator<T> iterator();

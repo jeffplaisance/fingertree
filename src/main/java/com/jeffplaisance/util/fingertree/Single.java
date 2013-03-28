@@ -68,6 +68,18 @@ public class Single<V,T> implements FingerTree<V,T> {
     }
 
     @Override
+    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+        if (inclusive) return this;
+        return predicate.apply(measured.sum(initial, measure)) ? new Empty<V, T>(measured) : this;
+    }
+
+    @Override
+    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+        if (inclusive) return this;
+        return predicate.apply(measured.sum(initial, measure)) ? this : new Empty<V, T>(measured);
+    }
+
+    @Override
     public Split<V, T> split(Predicate<V> predicate, V initial) {
         final Empty<V, T> empty = new Empty<>(measured);
         return new Split<V, T>(empty, a, empty);

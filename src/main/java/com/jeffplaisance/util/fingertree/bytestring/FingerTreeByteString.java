@@ -80,13 +80,12 @@ class FingerTreeByteString extends ByteString {
             }
         }, 0);
         final int headLength = split1.getHead().measure();
-        final Split<Integer, ByteStringLiteral> split2 = split1.getTail().addFirst(split1.getElement()).split(new Predicate<Integer>() {
+        final FingerTree<Integer, ByteStringLiteral> substring = split1.getTail().addFirst(split1.getElement()).splitLeft(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer >= end - headLength;
             }
-        }, 0);
-        final FingerTree<Integer, ByteStringLiteral> substring = split2.getHead().addLast(split2.getElement());
+        }, 0, true);
         final int substringLen = substring.measure();
         final FingerTree<Integer, ByteStringLiteral> substring2 = substring.removeFirst().addFirst(substring.first().substring(start - headLength, substring.first().length()));
         final FingerTree<Integer, ByteStringLiteral> substring3 = substring2.removeLast().addLast(substring2.last().substring(0, substring2.last().length() - (headLength + substringLen - end)));
@@ -141,6 +140,7 @@ class FingerTreeByteString extends ByteString {
     }
 
     public static void main(String[] args) throws IOException {
+        long start = -System.nanoTime();
         ByteString byteString = ByteString.empty();
         for (char i = 'a'; i <= 'z'; i++) {
             for (char j = 'a'; j <= 'z'; j++) {
@@ -150,15 +150,21 @@ class FingerTreeByteString extends ByteString {
                 }
             }
         }
+
+        ByteString bs2 = byteString;
+
         System.out.println((char)byteString.getByte(6));
         System.out.println();
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteStreams.copy(byteString.getInputStream(), out);
         final String str = new String(out.toByteArray(), Charsets.UTF_8);
-        System.out.println(str.substring(129, 253));
+        System.out.println(str.substring(117, 284));
         System.out.println();
 
-        byteString = byteString.substring(129, 253);
+        byteString = byteString.substring(117, 284);
         byteString.writeTo(System.out);
+        start += System.nanoTime();
+        System.out.println();
+        System.out.println(start/1000000d+" ms");
     }
 }

@@ -66,6 +66,16 @@ public class Empty<V,T> implements FingerTree<V,T> {
     }
 
     @Override
+    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+        return this;
+    }
+
+    @Override
+    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+        return this;
+    }
+
+    @Override
     public Split<V, T> split(Predicate<V> predicate, V initial) {
         throw new UnsupportedOperationException();
     }

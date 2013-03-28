@@ -2,6 +2,7 @@ package com.jeffplaisance.util.fingertree;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
@@ -15,14 +16,14 @@ public class Deep<V,T> implements FingerTree<V,T> {
     private final FingerTree<V,Node<V,T>> middle;
     private final Digit<V,T> suffix;
     private final Measured<V, T> measured;
-    private final V measure;
+    private volatile V measure;
 
     public Deep(Digit<V, T> prefix, FingerTree<V, Node<V,T>> middle, Digit<V, T> suffix, Measured<V,T> measured) {
         this.prefix = prefix;
         this.middle = middle;
         this.suffix = suffix;
         this.measured = measured;
-        this.measure = measured.sum(measured.sum(prefix.measure(), middle.measure()), suffix.measure());
+        measure = null;
     }
 
     @Override
@@ -32,7 +33,18 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
     @Override
     public V measure() {
-        return measure;
+        V localMeasure = measure;
+        if (localMeasure == null) {
+            synchronized (this) {
+                if (measure == null) {
+                    localMeasure = measured.sum(measured.sum(prefix.measure(), middle.measure()), suffix.measure());
+                    measure = localMeasure;
+                }  else {
+                    localMeasure = measure;
+                }
+            }
+        }
+        return localMeasure;
     }
 
     @Override
@@ -116,7 +128,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
                     }
 
                     @Override
-                    public FingerTree<V, T> deep(Digit<V, T> prefixB, FingerTree<V, Node<V, T>> middleB, Digit<V, T> suffixB) {
+                    public FingerTree<V, T> deep(Digit<V, T> prefixB, final FingerTree<V, Node<V, T>> middleB, Digit<V, T> suffixB) {
                         final IterableReverseIterable<Node<V, T>> nodes = nodes(
                                 IterableReverseIterables.concat(
                                         suffixA,
@@ -124,7 +136,12 @@ public class Deep<V,T> implements FingerTree<V,T> {
                                 ),
                                 measured
                         );
-                        final FingerTree<V, Node<V, T>> middle = app3(middleA, nodes, middleB, measured.nodeMeasured());
+                        final FingerTree<V, Node<V, T>> middle = new FingerTreeThunk<V, Node<V, T>>(new Supplier<FingerTree<V, Node<V, T>>>() {
+                            @Override
+                            public FingerTree<V, Node<V, T>> get() {
+                                return app3(middleA, nodes, middleB, measured.nodeMeasured());
+                            }
+                        });
                         return new Deep<V, T>(prefixA, middle, suffixB, measured);
                     }
                 });
@@ -228,7 +245,13 @@ public class Deep<V,T> implements FingerTree<V,T> {
                 if (middle.isEmpty()) {
                     return FingerTrees.toTree(suffix, measured);
                 } else {
-                    return new Deep<V, T>(middle.first().toDigit(), middle.removeFirst(), suffix, measured);
+                    final FingerTreeThunk<V, Node<V, T>> newMiddle = new FingerTreeThunk<V, Node<V,T>>(new Supplier<FingerTree<V, Node<V, T>>>() {
+                        @Override
+                        public FingerTree<V, Node<V, T>> get() {
+                            return middle.removeFirst();
+                        }
+                    });
+                    return new Deep<V, T>(middle.first().toDigit(), newMiddle, suffix, measured);
                 }
             }
 
@@ -257,7 +280,13 @@ public class Deep<V,T> implements FingerTree<V,T> {
                 if (middle.isEmpty()) {
                     return FingerTrees.toTree(prefix, measured);
                 } else {
-                    return new Deep<V, T>(prefix, middle.removeLast(), middle.last().toDigit(), measured);
+                    final FingerTreeThunk<V, Node<V, T>> newMiddle = new FingerTreeThunk<V, Node<V,T>>(new Supplier<FingerTree<V, Node<V, T>>>() {
+                        @Override
+                        public FingerTree<V, Node<V, T>> get() {
+                            return middle.removeLast();
+                        }
+                    });
+                    return new Deep<V, T>(prefix, newMiddle, middle.last().toDigit(), measured);
                 }
             }
 
@@ -279,6 +308,52 @@ public class Deep<V,T> implements FingerTree<V,T> {
     }
 
     @Override
+    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+        final V vpr = measured.sum(initial, prefix.measure());
+        final SplitDigit<T> splitDigit;
+        final FingerTree<V,T> left;
+        if (predicate.apply(vpr)) {
+            splitDigit = splitDigit(measured, predicate, initial, prefix);
+            left = FingerTrees.toTree(splitDigit.head, measured);
+        } else {
+            final V vm = measured.sum(vpr, middle.measure());
+            if (predicate.apply(vm)) {
+                final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
+                splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
+                left = deepR(prefix, split.getHead(), splitDigit.head, measured);
+            } else {
+                splitDigit = splitDigit(measured, predicate, vm, suffix);
+                left = deepR(prefix, middle, splitDigit.head, measured);
+            }
+        }
+        if (inclusive) return left.addLast(splitDigit.t);
+        return left;
+    }
+
+    @Override
+    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+        final V vpr = measured.sum(initial, prefix.measure());
+        final SplitDigit<T> splitDigit;
+        final FingerTree<V,T> right;
+        if (predicate.apply(vpr)) {
+            splitDigit = splitDigit(measured, predicate, initial, prefix);
+            right = deepL(splitDigit.tail, middle, suffix, measured);
+        } else {
+            final V vm = measured.sum(vpr, middle.measure());
+            if (predicate.apply(vm)) {
+                final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
+                splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
+                right = deepL(splitDigit.tail, split.getTail(), suffix, measured);
+            } else {
+                splitDigit = splitDigit(measured, predicate, vm, suffix);
+                right = FingerTrees.toTree(splitDigit.tail, measured);
+            }
+        }
+        if (inclusive) return right.addFirst(splitDigit.t);
+        return right;
+    }
+
+    @Override
     public Split<V, T> split(Predicate<V> predicate, V initial) {
         final V vpr = measured.sum(initial, prefix.measure());
         if (predicate.apply(vpr)) {
@@ -296,12 +371,18 @@ public class Deep<V,T> implements FingerTree<V,T> {
         }
     }
 
-    private static <V,T> FingerTree<V, T> deepL(List<T> prefix, FingerTree<V, Node<V,T>> middle, Digit<V, T> suffix, Measured<V, T> measured) {
+    private static <V,T> FingerTree<V, T> deepL(List<T> prefix, final FingerTree<V, Node<V,T>> middle, Digit<V, T> suffix, Measured<V, T> measured) {
         if (prefix.isEmpty()) {
             if (middle.isEmpty()) {
                 return FingerTrees.toTree(suffix, measured);
             } else {
-                return new Deep<V, T>(middle.first().toDigit(), middle.removeFirst(), suffix, measured);
+                final FingerTreeThunk<V, Node<V, T>> newMiddle = new FingerTreeThunk<V, Node<V,T>>(new Supplier<FingerTree<V, Node<V, T>>>() {
+                    @Override
+                    public FingerTree<V, Node<V, T>> get() {
+                        return middle.removeFirst();
+                    }
+                });
+                return new Deep<V, T>(middle.first().toDigit(), newMiddle, suffix, measured);
             }
         } else {
             final Digit<V,T> newPrefix;
@@ -325,12 +406,18 @@ public class Deep<V,T> implements FingerTree<V,T> {
         }
     }
 
-    private static <V,T> FingerTree<V, T> deepR(Digit<V,T> prefix, FingerTree<V, Node<V,T>> middle, List<T> suffix, Measured<V, T> measured) {
+    private static <V,T> FingerTree<V, T> deepR(Digit<V,T> prefix, final FingerTree<V, Node<V,T>> middle, List<T> suffix, Measured<V, T> measured) {
         if (suffix.isEmpty()) {
             if (middle.isEmpty()) {
                 return FingerTrees.toTree(prefix, measured);
             } else {
-                return new Deep<V, T>(prefix, middle.removeLast(), middle.last().toDigit(), measured);
+                final FingerTreeThunk<V, Node<V, T>> newMiddle = new FingerTreeThunk<V, Node<V,T>>(new Supplier<FingerTree<V, Node<V, T>>>() {
+                    @Override
+                    public FingerTree<V, Node<V, T>> get() {
+                        return middle.removeLast();
+                    }
+                });
+                return new Deep<V, T>(prefix, newMiddle, middle.last().toDigit(), measured);
             }
         } else {
             final Digit<V,T> newSuffix;
@@ -390,12 +477,37 @@ public class Deep<V,T> implements FingerTree<V,T> {
 
     @Override
     public Iterator<T> iterator() {
-        final Iterator<T> concat = Iterators.concat(Iterators.transform(middle.iterator(), new Function<Node<V, T>, Iterator<T>>() {
-            @Override
-            public Iterator<T> apply(Node<V, T> ts) {
-                return ts.iterator();
+        final Iterator<T> middleIteratorThunk = new Iterator<T>() {
+
+            Iterator<T> middleIterator = null;
+
+            Iterator<T> getMiddleIterator() {
+                if (middleIterator == null) {
+                    middleIterator = Iterators.concat(Iterators.transform(middle.iterator(), new Function<Node<V, T>, Iterator<T>>() {
+                        @Override
+                        public Iterator<T> apply(Node<V, T> ts) {
+                            return ts.iterator();
+                        }
+                    }));
+                }
+                return middleIterator;
             }
-        }));
-        return Iterators.concat(prefix.iterator(), concat, suffix.iterator());
+
+            @Override
+            public boolean hasNext() {
+                return getMiddleIterator().hasNext();
+            }
+
+            @Override
+            public T next() {
+                return getMiddleIterator().next();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return Iterators.concat(prefix.iterator(), middleIteratorThunk, suffix.iterator());
     }
 }

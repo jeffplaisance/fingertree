@@ -46,7 +46,7 @@ class ByteStringLiteral extends ByteString {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream newInputStream() {
         return new ByteArrayInputStream(bytes, offset, length);
     }
 

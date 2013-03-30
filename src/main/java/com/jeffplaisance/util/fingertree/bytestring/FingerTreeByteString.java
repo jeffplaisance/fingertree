@@ -93,7 +93,7 @@ class FingerTreeByteString extends ByteString {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream newInputStream() {
         try {
             return ByteStreams.join(Iterables.transform(bytes, new Function<ByteStringLiteral, InputSupplier<InputStream>>() {
                 @Override
@@ -101,7 +101,7 @@ class FingerTreeByteString extends ByteString {
                     return new InputSupplier<InputStream>() {
                         @Override
                         public InputStream getInput() throws IOException {
-                            return literal.getInputStream();
+                            return literal.newInputStream();
                         }
                     };
                 }
@@ -156,7 +156,7 @@ class FingerTreeByteString extends ByteString {
         System.out.println((char)byteString.getByte(6));
         System.out.println();
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ByteStreams.copy(byteString.getInputStream(), out);
+        ByteStreams.copy(byteString.newInputStream(), out);
         final String str = new String(out.toByteArray(), Charsets.UTF_8);
         System.out.println(str.substring(117, 284));
         System.out.println();

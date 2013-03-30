@@ -25,7 +25,7 @@ public abstract class ByteString {
 
     public abstract ByteString substring(int start, int end);
 
-    public abstract InputStream getInputStream();
+    public abstract InputStream newInputStream();
 
     public abstract void writeTo(OutputStream out) throws IOException;
 

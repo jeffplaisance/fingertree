@@ -1,13 +1,15 @@
 package com.jeffplaisance.util.fingertree.list;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import com.jeffplaisance.util.Pair;
 import com.jeffplaisance.util.fingertree.Empty;
 import com.jeffplaisance.util.fingertree.FingerTree;
 import com.jeffplaisance.util.fingertree.FingerTrees;
 import com.jeffplaisance.util.fingertree.Measured;
 import com.jeffplaisance.util.fingertree.Single;
-import com.jeffplaisance.util.fingertree.Split;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -149,5 +151,23 @@ public class IndexedList<T> implements Iterable<T> {
             a[i] = iterator.next();
         }
         return a;
+    }
+
+    @Override
+    public int hashCode() {
+        final Hasher hasher = Hashing.murmur3_32().newHasher();
+        for (T t : this) {
+            hasher.putInt(t.hashCode());
+        }
+        return hasher.hash().asInt();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof IndexedList)) {
+            return false;
+        }
+        final IndexedList other = (IndexedList) obj;
+        return size() == other.size() && Iterables.elementsEqual(this, other);
     }
 }

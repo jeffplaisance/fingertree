@@ -7,10 +7,10 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
+import com.jeffplaisance.util.Pair;
 import com.jeffplaisance.util.fingertree.Empty;
 import com.jeffplaisance.util.fingertree.FingerTree;
 import com.jeffplaisance.util.fingertree.Measured;
-import com.jeffplaisance.util.fingertree.Split;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -73,19 +73,21 @@ class FingerTreeByteString extends ByteString {
 
     @Override
     public ByteString substring(final int start, final int end) {
-        final Split<Integer,ByteStringLiteral> split1 = bytes.split(new Predicate<Integer>() {
-            @Override
-            public boolean apply(Integer integer) {
-                return integer > start;
-            }
-        }, 0);
-        final int headLength = split1.getHead().measure();
-        final FingerTree<Integer, ByteStringLiteral> substring = split1.getTail().addFirst(split1.getElement()).splitLeft(new Predicate<Integer>() {
+        final Pair<FingerTree<Integer, ByteStringLiteral>, FingerTree<Integer, ByteStringLiteral>> split1 = bytes.split(
+                new Predicate<Integer>() {
+                    @Override
+                    public boolean apply(Integer integer) {
+                        return integer > start;
+                    }
+                }
+        );
+        final int headLength = split1.a().measure();
+        final FingerTree<Integer, ByteStringLiteral> substring = split1.b().takeUntil(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer >= end - headLength;
             }
-        }, 0, true);
+        }, true);
         final int substringLen = substring.measure();
         final FingerTree<Integer, ByteStringLiteral> substring2 = substring.removeFirst().addFirst(substring.first().substring(start - headLength, substring.first().length()));
         final FingerTree<Integer, ByteStringLiteral> substring3 = substring2.removeLast().addLast(substring2.last().substring(0, substring2.last().length() - (headLength + substringLen - end)));
@@ -95,17 +97,20 @@ class FingerTreeByteString extends ByteString {
     @Override
     public InputStream newInputStream() {
         try {
-            return ByteStreams.join(Iterables.transform(bytes, new Function<ByteStringLiteral, InputSupplier<InputStream>>() {
-                @Override
-                public InputSupplier<InputStream> apply(final ByteStringLiteral literal) {
-                    return new InputSupplier<InputStream>() {
+            return ByteStreams.join(Iterables.transform(
+                    bytes,
+                    new Function<ByteStringLiteral, InputSupplier<InputStream>>() {
                         @Override
-                        public InputStream getInput() throws IOException {
-                            return literal.newInputStream();
+                        public InputSupplier<InputStream> apply(final ByteStringLiteral literal) {
+                            return new InputSupplier<InputStream>() {
+                                @Override
+                                public InputStream getInput() throws IOException {
+                                    return literal.newInputStream();
+                                }
+                            };
                         }
-                    };
-                }
-            })).getInput();
+                    }
+            )).getInput();
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -120,13 +125,13 @@ class FingerTreeByteString extends ByteString {
 
     @Override
     public byte getByte(final int index) {
-        final Split<Integer, ByteStringLiteral> split = bytes.split(new Predicate<Integer>() {
+        final Pair<FingerTree<Integer, ByteStringLiteral>, FingerTree<Integer, ByteStringLiteral>> split = bytes.split(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer > index;
             }
-        }, 0);
-        return split.getElement().getByte(index-split.getHead().measure());
+        });
+        return split.b().first().getByte(index-split.a().measure());
     }
 
     @Override
@@ -158,11 +163,16 @@ class FingerTreeByteString extends ByteString {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteStreams.copy(byteString.newInputStream(), out);
         final String str = new String(out.toByteArray(), Charsets.UTF_8);
-        System.out.println(str.substring(117, 284));
+        System.out.print(str.substring(117, 284));
         System.out.println();
 
         byteString = byteString.substring(117, 284);
         byteString.writeTo(System.out);
+        System.out.println();
+
+        ByteString byteString2 = byteString.substring(0, byteString.length());
+        byteString2.writeTo(System.out);
+
         start += System.nanoTime();
         System.out.println();
         System.out.println(start/1000000d+" ms");

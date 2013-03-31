@@ -42,6 +42,9 @@ class ByteStringLiteral extends ByteString {
 
     @Override
     public ByteStringLiteral substring(int start, int end) {
+        if (start < 0 || end > length) {
+            throw new IllegalArgumentException();
+        }
         return new ByteStringLiteral(bytes, offset+start, end-start);
     }
 

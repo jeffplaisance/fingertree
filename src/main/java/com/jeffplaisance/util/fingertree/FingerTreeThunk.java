@@ -2,10 +2,11 @@ package com.jeffplaisance.util.fingertree;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
+import com.jeffplaisance.util.Pair;
 
 import java.util.Iterator;
 
-public class FingerTreeThunk<V,T> implements FingerTree<V,T> {
+public class FingerTreeThunk<V,T> extends FingerTree<V,T> {
 
     private Supplier<FingerTree<V,T>> supplier;
     private volatile FingerTree<V,T> tree;
@@ -76,6 +77,22 @@ public class FingerTreeThunk<V,T> implements FingerTree<V,T> {
         return getTree().removeLast();
     }
 
+    public FingerTree<V,T> takeUntil(Predicate<V> predicate) {
+        return getTree().takeUntil(predicate);
+    }
+
+    public FingerTree<V,T> dropUntil(Predicate<V> predicate) {
+        return getTree().dropUntil(predicate);
+    }
+
+    public FingerTree<V,T> takeUntil(Predicate<V> predicate, boolean inclusive) {
+        return getTree().takeUntil(predicate, inclusive);
+    }
+
+    public FingerTree<V,T> dropUntil(Predicate<V> predicate, boolean inclusive) {
+        return getTree().dropUntil(predicate, inclusive);
+    }
+
     @Override
     public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
         return getTree().splitLeft(predicate, initial, inclusive);
@@ -86,8 +103,12 @@ public class FingerTreeThunk<V,T> implements FingerTree<V,T> {
         return getTree().splitRight(predicate, initial, inclusive);
     }
 
-    public Split<V,T> split(Predicate<V> predicate, V initial) {
-        return getTree().split(predicate, initial);
+    public Pair<FingerTree<V,T>,FingerTree<V,T>> split(Predicate<V> predicate) {
+        return getTree().split(predicate);
+    }
+
+    public Split<V,T> splitTree(Predicate<V> predicate, V initial) {
+        return getTree().splitTree(predicate, initial);
     }
 
     @Override

@@ -2,10 +2,11 @@ package com.jeffplaisance.util.fingertree;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
+import com.jeffplaisance.util.Pair;
 
 import java.util.Iterator;
 
-public class Single<V,T> implements FingerTree<V,T> {
+public final class Single<V,T> extends FingerTree<V,T> {
 
     private final T a;
     private final Measured<V, T> measured;
@@ -68,19 +69,47 @@ public class Single<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate) {
+        return splitLeft(predicate, measured.zero(), false);
+    }
+
+    @Override
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate) {
+        return splitRight(predicate, measured.zero(), true);
+    }
+
+    @Override
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate, boolean inclusive) {
+        return splitLeft(predicate, measured.zero(), inclusive);
+    }
+
+    @Override
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate, boolean inclusive) {
+        return splitRight(predicate, measured.zero(), inclusive);
+    }
+
+    @Override
+    protected FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
         if (inclusive) return this;
         return predicate.apply(measured.sum(initial, measure)) ? new Empty<V, T>(measured) : this;
     }
 
     @Override
-    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+    protected FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
         if (inclusive) return this;
         return predicate.apply(measured.sum(initial, measure)) ? this : new Empty<V, T>(measured);
     }
 
     @Override
-    public Split<V, T> split(Predicate<V> predicate, V initial) {
+    public Pair<FingerTree<V, T>, FingerTree<V, T>> split(Predicate<V> predicate) {
+        if (predicate.apply(measure)) {
+            return Pair.<FingerTree<V, T>, FingerTree<V, T>>of(new Empty<V, T>(measured), this);
+        }
+        return Pair.<FingerTree<V, T>, FingerTree<V, T>>of(this, new Empty<V, T>(measured));
+    }
+
+    @Override
+    public Split<V, T> splitTree(Predicate<V> predicate, V initial) {
         final Empty<V, T> empty = new Empty<>(measured);
         return new Split<V, T>(empty, a, empty);
     }

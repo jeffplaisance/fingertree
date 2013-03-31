@@ -2,10 +2,11 @@ package com.jeffplaisance.util.fingertree;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
+import com.jeffplaisance.util.Pair;
 
 import java.util.Iterator;
 
-public class Empty<V,T> implements FingerTree<V,T> {
+public final class Empty<V,T> extends FingerTree<V,T> {
 
     private final Measured<V, T> measured;
     private final V measure;
@@ -66,17 +67,43 @@ public class Empty<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate) {
         return this;
     }
 
     @Override
-    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate) {
         return this;
     }
 
     @Override
-    public Split<V, T> split(Predicate<V> predicate, V initial) {
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate, boolean inclusive) {
+        return this;
+    }
+
+    @Override
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate, boolean inclusive) {
+        return this;
+    }
+
+    @Override
+    protected FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+        return this;
+    }
+
+    @Override
+    protected FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+        return this;
+    }
+
+    @Override
+    public Pair<FingerTree<V, T>, FingerTree<V, T>> split(Predicate<V> predicate) {
+        final Empty<V, T> empty = new Empty<>(measured);
+        return Pair.<FingerTree<V, T>, FingerTree<V, T>>of(empty, empty);
+    }
+
+    @Override
+    protected Split<V, T> splitTree(Predicate<V> predicate, V initial) {
         throw new UnsupportedOperationException();
     }
 

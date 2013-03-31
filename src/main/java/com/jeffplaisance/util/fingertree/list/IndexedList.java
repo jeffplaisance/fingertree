@@ -1,6 +1,7 @@
 package com.jeffplaisance.util.fingertree.list;
 
 import com.google.common.base.Predicate;
+import com.jeffplaisance.util.Pair;
 import com.jeffplaisance.util.fingertree.Empty;
 import com.jeffplaisance.util.fingertree.FingerTree;
 import com.jeffplaisance.util.fingertree.FingerTrees;
@@ -67,23 +68,23 @@ public class IndexedList<T> implements Iterable<T> {
     }
 
     public T get(final int index) {
-        final Split<Integer, T> split = data.split(new Predicate<Integer>() {
+        final Pair<FingerTree<Integer, T>, FingerTree<Integer, T>> split = data.split(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer > index;
             }
-        }, 0);
-        return split.getElement();
+        });
+        return split.b().first();
     }
 
     public IndexedList<T> set(final int index, T t) {
-        final Split<Integer, T> split = data.split(new Predicate<Integer>() {
+        final Pair<FingerTree<Integer, T>, FingerTree<Integer, T>> split = data.split(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer > index;
             }
-        }, 0);
-        return new IndexedList<T>(split.getHead().addLast(t).concat(split.getTail()));
+        });
+        return new IndexedList<T>(split.a().addLast(t).concat(split.b().removeFirst()));
     }
 
     public IndexedList<T> addFirst(T t) {
@@ -123,18 +124,18 @@ public class IndexedList<T> implements Iterable<T> {
     }
 
     public IndexedList<T> subList(final int start, final int end) {
-        final Split<Integer, T> split1 = data.split(new Predicate<Integer>() {
+        final Pair<FingerTree<Integer, T>, FingerTree<Integer, T>> split1 = data.split(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer > start;
             }
-        }, 0);
-        final FingerTree<Integer, T> subList = split1.getTail().addFirst(split1.getElement()).splitLeft(new Predicate<Integer>() {
+        });
+        final FingerTree<Integer, T> subList = split1.b().takeUntil(new Predicate<Integer>() {
             @Override
             public boolean apply(Integer integer) {
                 return integer >= end - start;
             }
-        }, 0, true);
+        }, true);
         return new IndexedList<T>(subList);
     }
 

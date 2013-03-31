@@ -5,12 +5,13 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.jeffplaisance.util.Pair;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.List;
 
-public class Deep<V,T> implements FingerTree<V,T> {
+public final class Deep<V,T> extends FingerTree<V,T> {
 
     private final Digit<V,T> prefix;
     private final FingerTree<V,Node<V,T>> middle;
@@ -308,7 +309,33 @@ public class Deep<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate) {
+        return takeUntil(predicate, false);
+    }
+
+    @Override
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate) {
+        return dropUntil(predicate, true);
+    }
+
+    @Override
+    public FingerTree<V, T> takeUntil(Predicate<V> predicate, boolean inclusive) {
+        if (predicate.apply(measure())) {
+            return splitLeft(predicate, measured.zero(), inclusive);
+        }
+        return this;
+    }
+
+    @Override
+    public FingerTree<V, T> dropUntil(Predicate<V> predicate, boolean inclusive) {
+        if (predicate.apply(measure())) {
+            return splitRight(predicate, measured.zero(), inclusive);
+        }
+        return new Empty<V, T>(measured);
+    }
+
+    @Override
+    protected FingerTree<V, T> splitLeft(Predicate<V> predicate, V initial, boolean inclusive) {
         final V vpr = measured.sum(initial, prefix.measure());
         final SplitDigit<T> splitDigit;
         final FingerTree<V,T> left;
@@ -318,7 +345,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
         } else {
             final V vm = measured.sum(vpr, middle.measure());
             if (predicate.apply(vm)) {
-                final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
+                final Split<V, Node<V, T>> split = middle.splitTree(predicate, vpr);
                 splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
                 left = deepR(prefix, split.getHead(), splitDigit.head, measured);
             } else {
@@ -331,7 +358,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
+    protected FingerTree<V, T> splitRight(Predicate<V> predicate, V initial, boolean inclusive) {
         final V vpr = measured.sum(initial, prefix.measure());
         final SplitDigit<T> splitDigit;
         final FingerTree<V,T> right;
@@ -341,7 +368,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
         } else {
             final V vm = measured.sum(vpr, middle.measure());
             if (predicate.apply(vm)) {
-                final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
+                final Split<V, Node<V, T>> split = middle.splitTree(predicate, vpr);
                 splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
                 right = deepL(splitDigit.tail, split.getTail(), suffix, measured);
             } else {
@@ -354,7 +381,17 @@ public class Deep<V,T> implements FingerTree<V,T> {
     }
 
     @Override
-    public Split<V, T> split(Predicate<V> predicate, V initial) {
+    public Pair<FingerTree<V, T>, FingerTree<V, T>> split(Predicate<V> predicate) {
+        if (predicate.apply(measure())) {
+            final Split<V, T> split = splitTree(predicate, measured.zero());
+            return Pair.of(split.getHead(), split.getTail().addFirst(split.getElement()));
+        } else {
+            return Pair.<FingerTree<V,T>, FingerTree<V,T>>of(this, new Empty<V, T>(measured));
+        }
+    }
+
+    @Override
+    protected Split<V, T> splitTree(Predicate<V> predicate, V initial) {
         final V vpr = measured.sum(initial, prefix.measure());
         if (predicate.apply(vpr)) {
             final SplitDigit<T> splitDigit = splitDigit(measured, predicate, initial, prefix);
@@ -362,7 +399,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
         }
         final V vm = measured.sum(vpr, middle.measure());
         if (predicate.apply(vm)) {
-            final Split<V, Node<V, T>> split = middle.split(predicate, vpr);
+            final Split<V, Node<V, T>> split = middle.splitTree(predicate, vpr);
             final SplitDigit<T> splitDigit = splitDigit(measured, predicate, measured.sum(vpr, split.getHead().measure()), split.getElement());
             return new Split<V, T>(deepR(prefix, split.getHead(), splitDigit.head, measured), splitDigit.t, deepL(splitDigit.tail, split.getTail(), suffix, measured));
         } else {
@@ -448,9 +485,6 @@ public class Deep<V,T> implements FingerTree<V,T> {
         V i = initial;
         while (iterator.hasNext()) {
             final T a = iterator.next();
-            if (!iterator.hasNext()) {
-                return new SplitDigit<T>(head, a, tail);
-            }
             i = measured.sum(i, measured.measure(a));
             if (predicate.apply(i)) {
                 while (iterator.hasNext()) {
@@ -460,7 +494,7 @@ public class Deep<V,T> implements FingerTree<V,T> {
             }
             head.add(a);
         }
-        throw new IllegalStateException("unreachable");
+        throw new IllegalArgumentException("predicate.apply(digit) == false");
     }
 
     private static final class SplitDigit<T> {

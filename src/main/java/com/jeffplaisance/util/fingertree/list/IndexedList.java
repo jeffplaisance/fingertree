@@ -2,6 +2,7 @@ package com.jeffplaisance.util.fingertree.list;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.jeffplaisance.util.Pair;
@@ -14,6 +15,8 @@ import com.jeffplaisance.util.fingertree.Single;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 
 public class IndexedList<T> implements Iterable<T> {
 
@@ -169,5 +172,28 @@ public class IndexedList<T> implements Iterable<T> {
         }
         final IndexedList other = (IndexedList) obj;
         return size() == other.size() && Iterables.elementsEqual(this, other);
+    }
+
+    public static void main(String[] args) {
+        final List<Integer> list = Lists.newArrayList();
+        IndexedList<Integer> iList = empty();
+        final Random r = new Random(0);
+        for (int i = 0; i < 100000; i++) {
+            final int rand = r.nextInt();
+            list.add(rand);
+            iList = iList.add(rand);
+        }
+        long sum1 = 0;
+        long sum2 = 0;
+        for (int i = 0; i < 100000; i++) {
+            final int index = r.nextInt(100000);
+            sum1 += list.get(index);
+            sum2 += iList.get(index);
+        }
+        System.out.println(sum1);
+        System.out.println(sum2);
+        final int start = r.nextInt(list.size());
+        final int length = r.nextInt(list.size()-start);
+        System.out.println(Iterables.elementsEqual(list.subList(start, start+length), iList.subList(start, start+length)));
     }
 }

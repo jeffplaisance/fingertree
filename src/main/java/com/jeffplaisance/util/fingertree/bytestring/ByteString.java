@@ -20,6 +20,11 @@ public abstract class ByteString {
         return new ByteStringLiteral(Arrays.copyOfRange(bytes, offset, offset+length), 0, length);
     }
 
+    public static ByteString readFrom(InputStream in) throws IOException {
+        final byte[] bytes = ByteStreams.toByteArray(in);
+        return new ByteStringLiteral(bytes, 0, bytes.length);
+    }
+
     public static ByteString empty() {
         return FingerTreeByteString.emptyFT();
     }
@@ -30,7 +35,9 @@ public abstract class ByteString {
 
     public abstract ByteString substring(int start, int end);
 
-    public abstract InputStream newInputStream();
+    public abstract ByteString substring(int start);
+
+    public abstract InputStream newInput();
 
     public abstract void writeTo(OutputStream out) throws IOException;
 
@@ -46,7 +53,7 @@ public abstract class ByteString {
             return ByteStreams.hash(new InputSupplier<InputStream>() {
                 @Override
                 public InputStream getInput() throws IOException {
-                    return newInputStream();
+                    return newInput();
                 }
             }, Hashing.murmur3_32()).asInt();
         } catch (IOException e) {
@@ -64,13 +71,13 @@ public abstract class ByteString {
                     new InputSupplier<InputStream>() {
                         @Override
                         public InputStream getInput() throws IOException {
-                            return newInputStream();
+                            return newInput();
                         }
                     },
                     new InputSupplier<InputStream>() {
                         @Override
                         public InputStream getInput() throws IOException {
-                            return ((ByteString) obj).newInputStream();
+                            return ((ByteString) obj).newInput();
                         }
                     }
             );

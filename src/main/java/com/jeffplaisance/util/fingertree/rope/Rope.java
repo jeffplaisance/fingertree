@@ -18,7 +18,6 @@ import com.jeffplaisance.util.fingertree.Single;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.Writer;
 import java.util.Arrays;
 
 public class Rope implements CharSequence {
@@ -128,9 +127,9 @@ public class Rope implements CharSequence {
         }
     }
 
-    public void writeTo(Writer out) throws IOException {
+    public void writeTo(Appendable out) throws IOException {
         for (String str : data) {
-            out.write(str);
+            out.append(str);
         }
     }
 

@@ -49,7 +49,12 @@ class ByteStringLiteral extends ByteString {
     }
 
     @Override
-    public InputStream newInputStream() {
+    public ByteString substring(int start) {
+        return substring(start, length);
+    }
+
+    @Override
+    public InputStream newInput() {
         return new ByteArrayInputStream(bytes, offset, length);
     }
 
